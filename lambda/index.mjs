@@ -1,27 +1,30 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const db = new DynamoDBClient({});
-const TABLE = process.env.TABLE_NAME;  // set in Lambda env vars
+const TABLE = process.env.TABLE_NAME;
 
-// IoT Core rule delivers the MQTT payload as a parsed object directly
 export const handler = async (event) => {
+  const body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
+
   await db.send(new PutItemCommand({
     TableName: TABLE,
     Item: {
       pk:                { S: "latest" },
       timestamp:         { S: new Date().toISOString() },
-      batterySoc:        { N: String(event.batterySoc) },
-      batteryVoltage:    { N: String(event.batteryVoltage) },
-      batteryCharge:     { N: String(event.batteryCharge) },
-      acLoadCurrent:     { N: String(event.acLoadCurrent) },
-      acLoadTotal:       { N: String(event.acLoadTotal) },
-      solar:             { N: String(event.solar) },
-      hydro:             { N: String(event.hydro) },
-      diesel:            { N: String(event.diesel) },
-      bufferTankCharge:  { N: String(event.bufferTankCharge) },
-      flueTemp:          { N: String(event.flueTemp) },
-      flowTemp:          { N: String(event.flowTemp) },
-      returnTemp:        { N: String(event.returnTemp) },
+      batterySoc:        { N: String(body.batterySoc) },
+      batteryVoltage:    { N: String(body.batteryVoltage) },
+      batteryCharge:     { N: String(body.batteryCharge) },
+      acLoadCurrent:     { N: String(body.acLoadCurrent) },
+      acLoadTotal:       { N: String(body.acLoadTotal) },
+      solar:             { N: String(body.solar) },
+      hydro:             { N: String(body.hydro) },
+      diesel:            { N: String(body.diesel) },
+      bufferTankCharge:  { N: String(body.bufferTankCharge) },
+      flueTemp:          { N: String(body.flueTemp) },
+      flowTemp:          { N: String(body.flowTemp) },
+      returnTemp:        { N: String(body.returnTemp) },
     },
   }));
+
+  return { statusCode: 200, body: "ok" };
 };

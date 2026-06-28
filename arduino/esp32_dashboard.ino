@@ -10,6 +10,7 @@ const char* WIFI_PASSWORD    = "your-wifi-password";
 const char* REMOTE_DATA_URL  = "http://192.168.1.x/your-endpoint";  // ← your local server
 const char* DUCKDNS_DOMAIN   = "yourname";                           // ← just the subdomain, not the full URL
 const char* DUCKDNS_TOKEN    = "your-token-here";
+const char* CLOUD_API_URL    = "https://xxxxxxxxxx.execute-api.us-east-2.amazonaws.com/data";  // ← API Gateway URL
 
 #define DUCKDNS_INTERVAL_MS 300000  // update every 5 minutes
 
@@ -297,11 +298,12 @@ void setup() {
 void loop() {
   server.handleClient();
 
-  // Read sensors every 5 seconds
+  // Read sensors and push to cloud every 5 seconds
   static unsigned long lastRead = 0;
   if (millis() - lastRead >= 5000) {
     lastRead = millis();
     readSensors();
+    pushToCloud();
   }
 
   // Update DuckDNS every 5 minutes
@@ -310,6 +312,44 @@ void loop() {
     lastDuckDNS = millis();
     updateDuckDNS();
   }
+}
+
+void pushToCloud() {
+  char payload[512];
+  snprintf(payload, sizeof(payload),
+    "{"
+      "\"batterySoc\":%.1f,"
+      "\"batteryVoltage\":%.1f,"
+      "\"batteryCharge\":%.2f,"
+      "\"acLoadCurrent\":%.2f,"
+      "\"acLoadTotal\":%.2f,"
+      "\"solar\":%.2f,"
+      "\"hydro\":%.2f,"
+      "\"diesel\":%.2f,"
+      "\"bufferTankCharge\":%.1f,"
+      "\"flueTemp\":%.1f,"
+      "\"flowTemp\":%.1f,"
+      "\"returnTemp\":%.1f"
+    "}",
+    readings.batterySoc, readings.batteryVoltage, readings.batteryCharge,
+    readings.acLoadCurrent, readings.acLoadTotal,
+    readings.solar, readings.hydro, readings.diesel,
+    readings.bufferTankCharge, readings.flueTemp,
+    readings.flowTemp, readings.returnTemp
+  );
+
+  HTTPClient http;
+  http.begin(CLOUD_API_URL);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(5000);
+
+  int code = http.POST(payload);
+  if (code > 0) {
+    Serial.printf("Cloud push: %d\n", code);
+  } else {
+    Serial.printf("Cloud push failed: %s\n", http.errorToString(code).c_str());
+  }
+  http.end();
 }
 
 void updateDuckDNS() {
