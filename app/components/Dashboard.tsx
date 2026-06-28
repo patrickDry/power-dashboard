@@ -96,7 +96,7 @@ export default function Dashboard() {
             <Stat label="Voltage" value={fmt(battery.voltage, 1)} unit="V" />
             <Stat
               label="Power"
-              value={fmt(Math.abs(battery.charge), 2)}
+              value={fmt(battery.charge, 2)}
               unit="kW"
               sub={battery.charge >= 0 ? "charging" : "discharging"}
             />
