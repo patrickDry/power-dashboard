@@ -22,19 +22,27 @@ export async function GET() {
 
   const item = result.Item;
   const data = {
-    timestamp:        item.timestamp.S,
-    batterySoc:       Number(item.batterySoc.N),
-    batteryVoltage:   Number(item.batteryVoltage.N),
-    batteryCharge:    Number(item.batteryCharge.N),
-    acLoadCurrent:    Number(item.acLoadCurrent.N),
-    acLoadTotal:      Number(item.acLoadTotal.N),
-    solar:            Number(item.solar.N),
-    hydro:            Number(item.hydro.N),
-    diesel:           Number(item.diesel.N),
-    bufferTankCharge: Number(item.bufferTankCharge.N),
-    flueTemp:         Number(item.flueTemp.N),
-    flowTemp:         Number(item.flowTemp.N),
-    returnTemp:       Number(item.returnTemp.N),
+    timestamp: item.timestamp.S,
+    battery: {
+      stateOfCharge: Number(item.batterySoc.N),
+      voltage:       Number(item.batteryVoltage.N),
+      charge:        Number(item.batteryCharge.N),
+    },
+    acLoad: {
+      current:    Number(item.acLoadCurrent.N),
+      totalToday: Number(item.acLoadTotal.N),
+    },
+    production: {
+      solar:  Number(item.solar.N),
+      hydro:  Number(item.hydro.N),
+      diesel: Number(item.diesel.N),
+    },
+    heating: {
+      bufferTankCharge:  Number(item.bufferTankCharge.N),
+      flueTemperature:   Number(item.flueTemp.N),
+      flowTemperature:   Number(item.flowTemp.N),
+      returnTemperature: Number(item.returnTemp.N),
+    },
   };
 
   return NextResponse.json(data);
