@@ -1,12 +1,17 @@
 import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 
-export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 const POLL_MS = 5_000;
 
 async function getLatest() {
-  const db = new DynamoDBClient({ region: process.env.AWS_REGION });
+  const db = new DynamoDBClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
   const result = await db.send(new GetItemCommand({
     TableName: process.env.TABLE_NAME!,
     Key: { pk: { S: "latest" } },
