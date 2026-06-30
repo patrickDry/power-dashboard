@@ -35,9 +35,15 @@ export async function DELETE() {
   return NextResponse.json({ ok: true });
 }
 
-// Dashboard calls this to request a relay state change
+// Dashboard calls this to request a relay state change.
+// Requires the correct password — checked server-side so it never ships to the client.
 export async function POST(req: NextRequest) {
-  const { state } = await req.json() as { state: boolean };
+  const { state, password } = await req.json() as { state: boolean; password?: string };
+
+  const expected = process.env.RELAY_PASSWORD;
+  if (!expected || password !== expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   await db.send(new UpdateItemCommand({
     TableName: TABLE,

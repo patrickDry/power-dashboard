@@ -30,13 +30,21 @@ export default function Dashboard() {
   const [relayPending, setRelayPending] = useState(false);
 
   const setDashboardRelay = async (state: boolean) => {
+    const password = window.prompt(`Enter password to turn the element ${state ? "ON" : "OFF"}:`);
+    if (password === null) return;  // user cancelled
+
     setRelayPending(true);
     try {
-      await fetch("/api/relay", {
+      const res = await fetch("/api/relay", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state }),
+        body: JSON.stringify({ state, password }),
       });
+      if (res.status === 401) {
+        window.alert("Incorrect password — relay not changed.");
+      } else if (!res.ok) {
+        window.alert("Failed to change relay. Try again.");
+      }
     } finally {
       setRelayPending(false);
     }
