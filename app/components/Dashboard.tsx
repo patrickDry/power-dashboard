@@ -27,6 +27,20 @@ export default function Dashboard() {
   const [data, setData] = useState<PowerSystemData | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [relayPending, setRelayPending] = useState(false);
+
+  const setDashboardRelay = async (state: boolean) => {
+    setRelayPending(true);
+    try {
+      await fetch("/api/relay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state }),
+      });
+    } finally {
+      setRelayPending(false);
+    }
+  };
 
   useEffect(() => {
     const es = new EventSource("/api/stream");
@@ -142,6 +156,34 @@ export default function Dashboard() {
             { label: "Diesel", value: production.diesel, colorClass: "bg-slate-500" },
           ]}
         />
+      </Card>
+
+      {/* ── Hot Water Relay ── */}
+      <Card title="Hot Water Element" icon="💧">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-white/40 text-xs">Actual state</span>
+            <span className={`text-2xl font-semibold ${data.relayActualState ? "text-emerald-400" : "text-white/40"}`}>
+              {data.relayActualState ? "On" : "Off"}
+            </span>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={() => setDashboardRelay(true)}
+              disabled={relayPending}
+              className="px-6 py-2 rounded-xl font-semibold text-sm bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              {relayPending ? "…" : "Turn On"}
+            </button>
+            <button
+              onClick={() => setDashboardRelay(false)}
+              disabled={relayPending}
+              className="px-6 py-2 rounded-xl font-semibold text-sm bg-white/10 text-white/60 border border-white/20 hover:bg-white/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              {relayPending ? "…" : "Turn Off"}
+            </button>
+          </div>
+        </div>
       </Card>
 
       {/* ── Heating ── */}

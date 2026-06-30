@@ -41,6 +41,7 @@ async function getLatest() {
       flowTemperature:   Number(item.flowTemp.N),
       returnTemperature: Number(item.returnTemp.N),
     },
+    relayActualState: item.relayActualState?.BOOL ?? false,
   };
 }
 

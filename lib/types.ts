@@ -20,4 +20,5 @@ export interface PowerSystemData {
     flowTemperature: number;     // °C
     returnTemperature: number;   // °C
   };
+  relayActualState: boolean;
 }

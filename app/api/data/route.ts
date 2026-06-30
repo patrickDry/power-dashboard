@@ -43,6 +43,7 @@ export async function GET() {
       flowTemperature:   Number(item.flowTemp.N),
       returnTemperature: Number(item.returnTemp.N),
     },
+    relayActualState: item.relayActualState?.BOOL ?? false,
   };
 
   return NextResponse.json(data);
