@@ -63,7 +63,6 @@ IPAddress boiler(10, 0, 0, 2);
 IPAddress boilerRelayAddress(10, 0, 0, 11);
 ModbusTCPClient modbusTCPClient(wifiClient);
 
-unsigned long lastMillis = 0;
 bool shouldLoadDump = false;
 bool isLoadDumping = false;
 float loadDumpLowVoltage = 480;
@@ -374,7 +373,7 @@ void loop()
     }
      last_push = millis();
   }
-  if (millis() - lastMillis > REPORT_INTERVAL_BOILER && connected) {
+  if (millis() - last_read_boiler > REPORT_INTERVAL_BOILER && connected) {
       last_read_boiler = millis();
       if (connected) {
         queryBoiler();
@@ -470,8 +469,10 @@ void pushToCloud() {
 
 
     int code = http.POST(payload);
+    
     if (code == 200) {
       String resp = http.getString();
+     
       // The Lambda returns the pending dashboard command in the response.
       // Only act when the user explicitly changed it (one-shot flag).
       if (resp.indexOf("\"relayDashboardChanged\":true") >= 0) {
@@ -489,9 +490,9 @@ void pushToCloud() {
         else {
           lv_obj_add_state(ui_LoadDumpSwitch, LV_STATE_CHECKED);
         }
-        Serial.printf("Dashboard relay override: %s\n", desired ? "ON" : "OFF");
+        Serial.printf("Dashboard relay override: %s\n", newState ? "ON" : "OFF");
       }
-     
+    }
      //Serial.printf("heap=%u largest=%u\n",
      //ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
 
@@ -687,7 +688,8 @@ void WiFiEvent(WiFiEvent_t event){
           //This initializes the transfer buffer
           Serial.println(udp.begin(udpPort));
           connected = true;
-          //boilerRelay(false);
+          boilerRelay(false);
+          last_read_boiler = millis() - REPORT_INTERVAL_BOILER + 2000;
           //queryBoiler();
           break;
       case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:

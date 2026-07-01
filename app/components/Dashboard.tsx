@@ -86,6 +86,9 @@ export default function Dashboard() {
 
   const { battery, acLoad, production, heating } = data;
   const totalProduction = production.solar + production.hydro + production.diesel;
+  const isCharging = battery.charge >= 0;
+  // Centered bar: 0 at middle, ±4 kW at the edges (50% of the track each side)
+  const chargeBarPct = Math.min(1, Math.abs(battery.charge) / 4) * 50;
 
   return (
     <div className="flex flex-col gap-6">
@@ -103,25 +106,55 @@ export default function Dashboard() {
 
       {/* ── Battery ── */}
       <Card title="Battery" icon="🔋">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between">
-            <span className="text-white text-5xl font-bold tabular-nums">
-              {fmt(battery.stateOfCharge, 1)}
-              <span className="text-white/40 text-2xl">%</span>
-            </span>
-            <div className="text-right">
-              <div className="text-white/40 text-xs">State of charge</div>
+        <div className="flex flex-col gap-4">
+          {/* State of charge */}
+          <div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-white text-5xl font-bold tabular-nums">
+                {fmt(battery.stateOfCharge, 1)}
+                <span className="text-white/40 text-2xl">%</span>
+              </span>
+              <div className="text-right">
+                <div className="text-white/40 text-xs">State of charge</div>
+                <div className="text-white/50 text-sm tabular-nums">{fmt(battery.voltage, 1)} V</div>
+              </div>
+            </div>
+            <div className="pt-3">
+              <GaugeBar value={battery.stateOfCharge} colorClass={socColor(battery.stateOfCharge)} height="h-4" />
             </div>
           </div>
-          <GaugeBar value={battery.stateOfCharge} colorClass={socColor(battery.stateOfCharge)} height="h-4" />
-          <div className="grid grid-cols-2 gap-4 pt-1">
-            <Stat label="Voltage" value={fmt(battery.voltage, 1)} unit="V" />
-            <Stat
-              label="Power"
-              value={fmt(battery.charge, 2)}
-              unit="kW"
-              sub={battery.charge >= 0 ? "charging" : "discharging"}
-            />
+
+          {/* Power — charging / discharging */}
+          <div className="border-t border-border pt-4 flex flex-col gap-2">
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline gap-1.5">
+                <span className={`text-4xl font-bold tabular-nums ${isCharging ? "text-emerald-400" : "text-red-400"}`}>
+                  {isCharging ? "+" : ""}{fmt(battery.charge, 2)}
+                </span>
+                <span className="text-white/40 text-xl">kW</span>
+              </div>
+              <span className={`text-xs font-semibold uppercase tracking-wide ${isCharging ? "text-emerald-400/80" : "text-red-400/80"}`}>
+                {isCharging ? "Charging" : "Discharging"}
+              </span>
+            </div>
+
+            {/* Centered charge/discharge bar: red left = discharge, green right = charge */}
+            <div className="relative w-full h-5 rounded-full bg-white/10 overflow-hidden">
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/25 -translate-x-1/2 z-10" />
+              <div
+                className={`absolute top-0 bottom-0 transition-all duration-500 ${isCharging ? "bg-emerald-500" : "bg-red-500"}`}
+                style={
+                  isCharging
+                    ? { left: "50%", width: `${chargeBarPct}%` }
+                    : { right: "50%", width: `${chargeBarPct}%` }
+                }
+              />
+            </div>
+            <div className="flex justify-between text-white/30 text-xs">
+              <span>−4 kW</span>
+              <span>0</span>
+              <span>+4 kW</span>
+            </div>
           </div>
         </div>
       </Card>
