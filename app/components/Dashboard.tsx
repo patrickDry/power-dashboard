@@ -116,7 +116,6 @@ export default function Dashboard() {
               </span>
               <div className="text-right">
                 <div className="text-white/40 text-xs">State of charge</div>
-                <div className="text-white/50 text-sm tabular-nums">{fmt(battery.voltage, 1)} V</div>
               </div>
             </div>
             <div className="pt-3">
@@ -155,6 +154,15 @@ export default function Dashboard() {
               <span>0</span>
               <span>+4 kW</span>
             </div>
+          </div>
+
+          {/* Voltage */}
+          <div className="border-t border-border pt-4 flex flex-col items-center">
+            <span className="text-white text-3xl font-semibold tabular-nums">
+              {fmt(battery.voltage, 1)}
+              <span className="text-white/40 text-xl"> V</span>
+            </span>
+            <span className="text-white/40 text-xs">Battery voltage</span>
           </div>
         </div>
       </Card>
