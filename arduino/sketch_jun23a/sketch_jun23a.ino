@@ -33,6 +33,7 @@ struct {
 } readings;
 
 const char* CLOUD_API_URL    = "https://fxm27v6wq4.execute-api.us-east-2.amazonaws.com/data";  // ← API Gateway URL
+const char* RELAY_API_URL = "https://fxm27v6wq4.execute-api.us-east-2.amazonaws.com/relay";
 
 const int udpPort = 3333;
 char incomingPacket[256];
@@ -447,13 +448,15 @@ void pushToCloud() {
       "\"bufferTankCharge\":%.1f,"
       "\"flueTemp\":%.1f,"
       "\"flowTemp\":%.1f,"
-      "\"returnTemp\":%.1f"
+      "\"returnTemp\":%.1f,"
+      "\"relayActualState\":%s"
     "}",
     readings.batterySoc, readings.batteryVoltage, -readings.batteryCharge,
     readings.acLoadCurrent, readings.acLoadTotal,
     readings.solar, readings.hydro, readings.diesel,
     readings.bufferTankCharge, readings.flueTemp,
-    readings.flowTemp, readings.returnTemp
+    readings.flowTemp, readings.returnTemp,
+    shouldLoadDump ? "true" : "false"
   );
 
   {
@@ -463,14 +466,79 @@ void pushToCloud() {
     HTTPClient http;
     http.begin(secureClient, CLOUD_API_URL);
     http.addHeader("Content-Type", "application/json");
-    http.setTimeout(3000);
+    http.setTimeout(2000);
 
 
-  int code = http.POST(payload);
+    int code = http.POST(payload);
+    if (code == 200) {
+      String resp = http.getString();
+      // The Lambda returns the pending dashboard command in the response.
+      // Only act when the user explicitly changed it (one-shot flag).
+      if (resp.indexOf("\"relayDashboardChanged\":true") >= 0) {
+        bool newState = resp.indexOf("\"relayDashboardState\":true") >= 0;
+
+        shouldLoadDump = newState;
+        if (shouldLoadDump == false) {
+          lv_obj_clear_state(ui_LoadDumpSwitch, LV_STATE_CHECKED);
+           if (isLoadDumping)
+            {
+            boilerRelay(false);
+           isLoadDumping = false;
+          }
+        }
+        else {
+          lv_obj_add_state(ui_LoadDumpSwitch, LV_STATE_CHECKED);
+        }
+        Serial.printf("Dashboard relay override: %s\n", desired ? "ON" : "OFF");
+      }
+     
+     //Serial.printf("heap=%u largest=%u\n",
+     //ESP.getFreeHeap(), heap_caps_get_largest_free_block(MALLOC_CAP_8BIT));
 
     http.end();
   }
 }
+
+void checkDashboardRelay() {
+  WiFiClientSecure secureClient;
+  secureClient.setInsecure();
+  HTTPClient http;
+  http.begin(secureClient, RELAY_API_URL);
+  http.setTimeout(2000);
+
+  int code = http.GET();
+  Serial.println(code);
+  if (code == HTTP_CODE_OK) {
+    String body = http.getString();
+    Serial.println(body);
+    // Only act if dashboard flagged a change
+    if (body.indexOf("\"relayDashboardChanged\":true") >= 0) {
+      bool newState = body.indexOf("\"relayDashboardState\":true") >= 0;
+      if (newState != shouldLoadDump) {
+        shouldLoadDump = newState;
+        if (shouldLoadDump == false) {
+          lv_obj_clear_state(ui_LoadDumpSwitch, LV_STATE_CHECKED);
+           if (isLoadDumping)
+            {
+            boilerRelay(false);
+           isLoadDumping = false;
+          }
+        }
+        else {
+          lv_obj_add_state(ui_LoadDumpSwitch, LV_STATE_CHECKED);
+        }
+      }
+      Serial.printf("Dashboard relay override: %s\n", newState ? "ON" : "OFF");
+
+      // Clear the changed flag
+      http.end();
+      http.begin(secureClient, RELAY_API_URL);
+      http.sendRequest("DELETE", "");
+    }
+  }
+  http.end();
+}
+
 
 void randomizeUI()
 {
