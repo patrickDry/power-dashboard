@@ -12,15 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-surface antialiased">
-        <header className="sticky top-0 z-10 bg-surface/80 backdrop-blur border-b border-border px-4 py-3">
-          <div className="max-w-lg mx-auto flex items-center gap-2">
-            <span className="text-xl">⚡</span>
-            <h1 className="text-white font-semibold text-lg tracking-tight">Power Dashboard</h1>
-          </div>
-        </header>
-        <main className="max-w-lg mx-auto px-4 py-6">{children}</main>
-      </body>
+      <body className="min-h-screen bg-surface antialiased">{children}</body>
     </html>
   );
 }

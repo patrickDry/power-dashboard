@@ -25,7 +25,6 @@ function tankColor(pct: number): string {
 
 export default function Dashboard() {
   const [data, setData] = useState<PowerSystemData | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [relayPending, setRelayPending] = useState(false);
 
@@ -56,7 +55,6 @@ export default function Dashboard() {
     es.onmessage = (e) => {
       try {
         setData(JSON.parse(e.data) as PowerSystemData);
-        setLastUpdated(new Date().toLocaleTimeString());
         setError(null);
       } catch {
         setError("Received malformed data");
@@ -68,42 +66,31 @@ export default function Dashboard() {
     return () => es.close();
   }, []);
 
+  const timestamp = data ? new Date(data.timestamp).toLocaleString() : null;
+
+  let body: React.ReactNode;
+
   if (error && !data) {
-    return (
+    body = (
       <div className="flex items-center justify-center h-64 text-white/40 text-sm">
         {error}
       </div>
     );
-  }
-
-  if (!data) {
-    return (
+  } else if (!data) {
+    body = (
       <div className="flex items-center justify-center h-64 text-white/40 text-sm animate-pulse">
         Waiting for data…
       </div>
     );
-  }
+  } else {
+    const { battery, acLoad, production, heating } = data;
+    const totalProduction = production.solar + production.hydro + production.diesel;
+    const isCharging = battery.charge >= 0;
+    // Centered bar: 0 at middle, ±4 kW at the edges (50% of the track each side)
+    const chargeBarPct = Math.min(1, Math.abs(battery.charge) / 4) * 50;
 
-  const { battery, acLoad, production, heating } = data;
-  const totalProduction = production.solar + production.hydro + production.diesel;
-  const isCharging = battery.charge >= 0;
-  // Centered bar: 0 at middle, ±4 kW at the edges (50% of the track each side)
-  const chargeBarPct = Math.min(1, Math.abs(battery.charge) / 4) * 50;
-
-  return (
+    body = (
     <div className="flex flex-col gap-6">
-      {/* status bar */}
-      <div className="flex items-center justify-between text-white/30 text-xs">
-        <span>
-          Data as of{" "}
-          <span className="text-white/50 font-medium">
-            {new Date(data.timestamp).toLocaleString()}
-          </span>
-        </span>
-        {lastUpdated && <span>Refreshed {lastUpdated}</span>}
-        {error && <span className="text-amber-400">{error}</span>}
-      </div>
-
       {/* ── Battery ── */}
       <Card title="Battery" icon="🔋">
         <div className="flex flex-col gap-4">
@@ -260,5 +247,28 @@ export default function Dashboard() {
         </div>
       </Card>
     </div>
+    );
+  }
+
+  return (
+    <>
+      <header className="sticky top-0 z-10 bg-surface/80 backdrop-blur border-b border-border px-4 py-3">
+        <div className="max-w-lg mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">⚡</span>
+            <h1 className="text-white font-semibold text-lg tracking-tight">Power Dashboard</h1>
+          </div>
+          {error ? (
+            <span className="text-amber-400 text-xs text-right">{error}</span>
+          ) : timestamp ? (
+            <span className="text-white/40 text-xs text-right">
+              Data as of <span className="text-white/60 font-medium">{timestamp}</span>
+            </span>
+          ) : null}
+        </div>
+      </header>
+
+      <main className="max-w-lg mx-auto px-4 py-6">{body}</main>
+    </>
   );
 }
