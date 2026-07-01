@@ -124,7 +124,7 @@ export default function Dashboard() {
           </div>
 
           {/* Power — charging / discharging */}
-          <div className="border-t border-border pt-4 flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
             <div className="flex items-baseline justify-between">
               <div className="flex items-baseline gap-1.5">
                 <span className={`text-4xl font-bold tabular-nums ${isCharging ? "text-emerald-400" : "text-red-400"}`}>
@@ -157,7 +157,7 @@ export default function Dashboard() {
           </div>
 
           {/* Voltage */}
-          <div className="border-t border-border pt-4 flex flex-col items-center">
+          <div className="flex flex-col items-center">
             <span className="text-white text-3xl font-semibold tabular-nums">
               {fmt(battery.voltage, 1)}
               <span className="text-white/40 text-xl"> V</span>
